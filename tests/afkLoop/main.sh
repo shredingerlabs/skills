@@ -5,7 +5,7 @@
 set -euo pipefail
 
 main() {
-  echo "Hello from afkLoop test project"
+  echo "Hello, world!"
 }
 
 main "$@"
