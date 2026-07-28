@@ -164,22 +164,6 @@ highest_ready() {
   fi
 }
 
-if [[ $TITLE_MODE -eq 0 ]]; then
-  if [[ -z "$END" ]]; then
-    END=$(highest_ready)
-    [[ -n "$END" ]] || die "no tickets with label '$READY_LABEL' found in tracker"
-  fi
-  if [[ "$END" -lt "$START" ]]; then
-    die "resolved END ($END) is below START ($START); nothing to do"
-  fi
-  ISSUE_LIST=$(seq "$START" "$END")
-else
-  resolve_title_range
-  if [[ $SKIP_CONFIRM -eq 0 ]]; then
-    confirm_start || exit 0
-  fi
-fi
-
 # Fetch a ticket and emit a normalized JSON object:
 #   {state: "open"|"closed", labels: [...], body: "..."}
 fetch_ticket() {
@@ -314,7 +298,9 @@ resolve_title_range() {
     die "no issues matching prefix '$TITLE_PREFIX' in range $ts..$te with label '$READY_LABEL'"
   fi
 
-  echo "$PROG: walking $(printf '%s' "$ISSUE_ENTRIES" | wc -l) issues matching $ts..$te on $TRACKER ($ISSUES_URL)"
+  local count
+  count=$(printf '%s' "$ISSUE_LIST" | wc -w)
+  echo "$PROG: walking ${count// /} issues matching $ts..$te on $TRACKER ($ISSUES_URL)"
 }
 
 confirm_start() {
@@ -336,6 +322,22 @@ confirm_start() {
     *)             return 0 ;;
   esac
 }
+
+if [[ $TITLE_MODE -eq 0 ]]; then
+  if [[ -z "$END" ]]; then
+    END=$(highest_ready)
+    [[ -n "$END" ]] || die "no tickets with label '$READY_LABEL' found in tracker"
+  fi
+  if [[ "$END" -lt "$START" ]]; then
+    die "resolved END ($END) is below START ($START); nothing to do"
+  fi
+  ISSUE_LIST=$(seq "$START" "$END")
+else
+  resolve_title_range
+  if [[ $SKIP_CONFIRM -eq 0 ]]; then
+    confirm_start || exit 0
+  fi
+fi
 
 # Build the give-up comment, including the tail of the final attempt's log.
 build_giveup_comment() {
